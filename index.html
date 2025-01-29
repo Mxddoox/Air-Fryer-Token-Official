@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$AIRFRYER - Cooking Up Gains</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- Existing HTML content remains same -->
+
+    <script>
+        // ===== ADVANCED AIR FRYER BACKGROUND =====
+        let scene, camera, renderer, particles, steam;
+        const foodTextures = [
+            'assets/fries.png', 
+            'assets/nugget.png',
+            'assets/onion-ring.png'
+        ];
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.prepend(renderer.domElement);
+
+            // Air Fryer Model (Simplified)
+            const fryerGeometry = new THREE.BoxGeometry(4, 3, 2);
+            const fryerMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x444444,
+                emissive: 0xFF6B6B,
+                specular: 0x111111,
+                shininess: 100
+            });
+            const airFryer = new THREE.Mesh(fryerGeometry, fryerMaterial);
+            airFryer.position.set(0, -2, 0);
+            scene.add(airFryer);
+
+            // Food Particles
+            const particleGeometry = new THREE.BufferGeometry();
+            const particleCount = 200;
+            const posArray = new Float32Array(particleCount * 3);
+
+            for(let i = 0; i < particleCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 10;
+            }
+
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            const textureLoader = new THREE.TextureLoader();
+            const particleMaterials = foodTextures.map(tex => 
+                new THREE.PointsMaterial({
+                    map: textureLoader.load(tex),
+                    transparent: true,
+                    size: 0.3,
+                    blending: THREE.AdditiveBlending
+                })
+            );
+
+            particles = particleMaterials.map(mat => 
+                new THREE.Points(particleGeometry, mat)
+            );
+            particles.forEach(p => scene.add(p));
+
+            // Steam Effect
+            const steamGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+            const steamMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF,
+                transparent: true,
+                opacity: 0.5
+            });
+            steam = new THREE.InstancedMesh(steamGeometry, steamMaterial, 50);
+            
+            const steamDummy = new THREE.Object3D();
+            for(let i = 0; i < 50; i++) {
+                steamDummy.position.set(
+                    Math.random() * 2 - 1,
+                    Math.random() * 2 - 1,
+                    Math.random() * 2 - 1
+                );
+                steamDummy.updateMatrix();
+                steam.setMatrixAt(i, steamDummy.matrix);
+            }
+            steam.position.set(0, -1, 0);
+            scene.add(steam);
+
+            // Lighting
+            const light = new THREE.PointLight(0xFFE66D, 1, 100);
+            light.position.set(0, 5, 5);
+            scene.add(light);
+
+            camera.position.z = 8;
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate Food Particles
+            particles.forEach(p => {
+                p.rotation.x += 0.001;
+                p.rotation.y += 0.002;
+            });
+
+            // Steam Animation
+            const time = Date.now() * 0.001;
+            steam.position.y = Math.sin(time) * 0.2;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Resize Handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize
+        initThreeJS();
+        animate();
+
+        // Existing game logic remains below...
+    </script>
+</body>
+</html>
